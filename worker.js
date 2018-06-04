@@ -14,8 +14,8 @@ let cache = {
   has(key) {
     return cacache.get(cachePath, key).then(() => true).catch(() => false)
   },
-  set(key, value) {
-    return cacache.put(cachePath, key, value)
+  set(key, {data, meta}) {
+    return cacache.put(cachePath, key, data, meta)
   },
 }
 
@@ -30,6 +30,7 @@ async function processPage(url, root) {
   if (await cache.has(url)) {
     // console.log('using cache')
     let {data, metadata={}} = await cache.get(url)
+    body = data
 
     let isHtml = metadata.contentType && metadata.contentType.includes('text/html')
     let isError = metadata.isError
@@ -45,13 +46,18 @@ async function processPage(url, root) {
     let contentType = req.headers && req.headers['content-type'] ? req.headers['content-type'] : 'x/unknown'
     let isError = req.statusCode < 200 || req.statusCode >= 300
     await delay(100)
+
+    await cache.set(url, {
+      data: req.body,
+      meta: {
+        contentType, 
+        headers: req.headers, 
+        statusCode: req.statusCode,
+        isError: isError,
+      },
+    })
+    
     body = req.body
-    await cache.set(url, body, {metadata: {
-      contentType, 
-      headers: req.headers, 
-      statusCode: req.statusCode,
-      isError: isError,
-    }})
     
     let isHtml = contentType.includes('text/html')
     if (!isHtml || isError) {

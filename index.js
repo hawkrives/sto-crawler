@@ -42,7 +42,8 @@ async function processPage(url) {
   links.forEach(url => queue.add(1, processPage, [url]))
 }
 
-process.slice(2)
+process.argv
+  .slice(2)
   .filter(arg => !arg.startsWith('-'))
   .forEach(url => {
     queue.add(1, processPage, [url])

@@ -15,7 +15,7 @@ let cache = {
     return cacache.get(cachePath, key).then(() => true).catch(() => false)
   },
   set(key, {data, meta}) {
-    return cacache.put(cachePath, key, data, meta)
+    return cacache.put(cachePath, key, data, {metadata: meta})
   },
 }
 

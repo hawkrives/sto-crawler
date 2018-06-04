@@ -8,6 +8,8 @@ let queue = new RunQueue({maxConcurrency: 6})
 
 let pages = new Set()
 let blacklist = [
+  /[/]wp-json/,
+  /.*\.(jpe?g|png|css|svg|js|xml|php)/,
 ]
 
 let log = process.argv.includes('-q') ? () => {} : console.log
@@ -38,6 +40,7 @@ async function processPage(url) {
   let links = await worker.process(url, 'https://wp.stolaf.edu')
   links = links.filter(url => !pages.has(url))
   links = links.filter(url => regex.test(url))
+  links = links.filter(url => !blacklist.some(exp => exp.test(url)))
 
   links.forEach(url => queue.add(1, processPage, [url]))
 }

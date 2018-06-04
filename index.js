@@ -13,6 +13,7 @@ let blacklist = [
   /[/]files/,
   /[/]tag/,
   /[?].*page=/,
+  /wp\.stolaf\.edu\/(calendar|news)/,
 ]
 
 let log = process.argv.includes('-q') ? () => {} : console.log

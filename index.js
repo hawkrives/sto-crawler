@@ -7,6 +7,8 @@ let worker = new Worker(require.resolve('./worker'), {exposedMethods: ['process'
 let queue = new RunQueue({maxConcurrency: 6})
 
 let pages = new Set()
+let blacklist = [
+]
 
 let log = process.argv.includes('-q') ? () => {} : console.log
 let error = process.argv.includes('-q') ? () => {} : console.error
@@ -19,7 +21,7 @@ async function processPage(url) {
     return
   }
 
-  let regex = /.*cs\.stolaf\.edu\/wiki/
+  let regex = /.*\/\/wp\.stolaf\.edu/
   if (!regex.test(url)) {
     log('skipping non-stolaf site', url)
     pages.add(url)
@@ -33,12 +35,17 @@ async function processPage(url) {
   // process.stdout.write(`\r${pages.size} seen; ${queue.queued} queued; ${elapsed}s elapsed`)
   console.log(`\r${pages.size} seen; ${queue.queued} queued; ${elapsed}s elapsed`)
 
-  let links = await worker.process(url, 'http://www.cs.stolaf.edu')
+  let links = await worker.process(url, 'https://wp.stolaf.edu')
   links = links.filter(url => !pages.has(url))
   links = links.filter(url => regex.test(url))
 
   links.forEach(url => queue.add(1, processPage, [url]))
 }
 
-queue.add(1, processPage, ['http://www.cs.stolaf.edu/wiki/index.php/Main_Page'])
+process.slice(2)
+  .filter(arg => !arg.startsWith('-'))
+  .forEach(url => {
+    queue.add(1, processPage, [url])
+  })
+
 queue.run().then(() => worker.end())

@@ -29,30 +29,37 @@ async function processPage(url, root) {
   let body
   if (await cache.has(url)) {
     // console.log('using cache')
-    let {data, metadata} = await cache.get(url)
-    if (metadata && metadata.contentType && !metadata.contentType.includes('text/html')) {
+    let {data, metadata={}} = await cache.get(url)
+
+    let isHtml = metadata.contentType && metadata.contentType.includes('text/html')
+    let isError = metadata.isError
+    
+    if (!isHtml || isError) {
       return []
     }
-    body = data.toString('utf-8')
   } else {
-    let headers = {
-      cookie: 'Cookie: wiki_dbUserID=802; wiki_dbUserName=Rives; wiki_db_session=rgj4ffn48uksd9ti7dt3jgcoq3; _ga=GA1.2.1877808590.1517846158; lc_sso7639251=1526415638741; lc_sso8994300=1526325452794; lc_ssoundefined=1526047315284; __lc.visitor_id.7639251=S1519228459.34cd926bcb; __lc.visitor_id.8994300=S1518474387.f3502665f6',
-    }
-    let req = await got.get(url, {encoding: null, headers}).catch(err => {
+    let req = await got.get(url, {encoding: null}).catch(err => {
       error('error on', url, ':', err.message)
-      return {body: '', headers: {'content-type': 'x/unknown'}}
+      return {...err.response, body: ''}
     })
     let contentType = req.headers && req.headers['content-type'] ? req.headers['content-type'] : 'x/unknown'
+    let isError = req.statusCode < 200 || req.statusCode >= 300
     await delay(100)
     body = req.body
-    await cache.set(url, body, {metadata: {contentType}})
+    await cache.set(url, body, {metadata: {
+      contentType, 
+      headers: req.headers, 
+      statusCode: req.statusCode,
+      isError: isError,
+    }})
+    
     let isHtml = contentType.includes('text/html')
-    if (!isHtml) {
+    if (!isHtml || isError) {
       log('not parsing non-html', url)
       return []
     }
   }
-
+  
   body = body.toString('utf-8')
 
   try {
@@ -61,7 +68,7 @@ async function processPage(url, root) {
       .map(el => el.href)
       .filter(href => href)
 
-    let images = [...dom.window.document.querySelectorAll('[src]')]
+    let images = []//[...dom.window.document.querySelectorAll('[src]')]
       .map(el => el.src)
       .filter(href => href)
 

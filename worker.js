@@ -36,6 +36,7 @@ async function processPage(url, root) {
     let isError = metadata.isError
     
     if (!isHtml || isError) {
+      log('not parsing non-html', url)
       return []
     }
   } else {

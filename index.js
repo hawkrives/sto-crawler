@@ -9,7 +9,10 @@ let queue = new RunQueue({maxConcurrency: 6})
 let pages = new Set()
 let blacklist = [
   /[/]wp-json/,
-  /.*\.(jpe?g|png|css|svg|js|xml|php)/,
+  /.*\.(jpe?g|png|css|svg|js|xml|php|pdf)/,
+  /[/]files/,
+  /[/]tag/,
+  /[?].*page=/,
 ]
 
 let log = process.argv.includes('-q') ? () => {} : console.log
